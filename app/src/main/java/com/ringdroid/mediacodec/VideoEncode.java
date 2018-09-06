@@ -407,7 +407,7 @@ public class VideoEncode {
 
 
     private int extractorVideoInputBuffer(MediaExtractor mediaExtractor,MediaCodec mediaCodec){
-        int inputIndex = mediaCodec.dequeueInputBuffer(10000);
+        int inputIndex = mediaCodec.dequeueInputBuffer(50000);
         if (inputIndex >= 0) {
             ByteBuffer inputBuffer;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
@@ -433,7 +433,7 @@ public class VideoEncode {
         return 0;
     }
     private void encodeVideoOutputBuffer(MediaCodec mediaCodec,MediaCodec.BufferInfo info,long presentationTimeUs){
-        int encoderStatus = mediaCodec.dequeueOutputBuffer(info, 1000);
+        int encoderStatus = mediaCodec.dequeueOutputBuffer(info, 50000);
         if (encoderStatus >= 0) {
             ByteBuffer encodedData;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
@@ -467,7 +467,7 @@ public class VideoEncode {
     }
 
     private void extractorInputBuffer(MediaExtractor mediaExtractor,MediaCodec mediaCodec){
-        int inputIndex = mediaCodec.dequeueInputBuffer(10000);
+        int inputIndex = mediaCodec.dequeueInputBuffer(50000);
         if (inputIndex >= 0) {
             ByteBuffer inputBuffer;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
@@ -495,7 +495,7 @@ public class VideoEncode {
 
 
     private void encodeInputBuffer(ByteBuffer data,MediaCodec mediaCodec,MediaCodec.BufferInfo info){
-        int inputIndex = mediaCodec.dequeueInputBuffer(10000);
+        int inputIndex = mediaCodec.dequeueInputBuffer(50000);
         if (inputIndex >= 0) {
             ByteBuffer inputBuffer;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
