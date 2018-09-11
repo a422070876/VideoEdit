@@ -152,11 +152,11 @@ public class WaveformView extends View {
                 public boolean onScale(ScaleGestureDetector d) {
                     float scale = Math.abs(d.getCurrentSpanX());
                     Log.v("Ringdroid", "Scale " + (scale - mInitialScaleSpan));
-                    if (scale - mInitialScaleSpan > 40) {
+                    if (scale - mInitialScaleSpan > 20) {
                         mListener.waveformZoomIn();
                         mInitialScaleSpan = scale;
                     }
-                    if (scale - mInitialScaleSpan < -40) {
+                    if (scale - mInitialScaleSpan < -20) {
                         mListener.waveformZoomOut();
                         mInitialScaleSpan = scale;
                     }
@@ -177,6 +177,8 @@ public class WaveformView extends View {
         mSelectionEnd = 0;
         mDensity = 1.0f;
         mInitialized = false;
+
+        bitmaps = new SparseArray<>();
     }
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -184,7 +186,6 @@ public class WaveformView extends View {
         if (mGestureDetector.onTouchEvent(event)) {
             return true;
         }
-
         switch(event.getAction()) {
         case MotionEvent.ACTION_DOWN:
             mListener.waveformTouchStart(event.getX());
@@ -203,10 +204,6 @@ public class WaveformView extends View {
         return duration != 0;
     }
 
-    public void setBitmaps(SparseArray<Bitmap> bitmaps) {
-        this.bitmaps = bitmaps;
-        invalidate();
-    }
 
     private MediaMetadataRetriever media;
     private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(3);
@@ -248,7 +245,6 @@ public class WaveformView extends View {
 
     public void zoomIn() {
         if (canZoomIn()) {
-
             mZoomLevel--;
             float zoom = mZooms[mZoomLevel];
             mSelectionStart *= zoom;
@@ -268,6 +264,16 @@ public class WaveformView extends View {
     public void zoomOut() {
 
         if (canZoomOut()) {
+
+            if(mZoomLevel == 0 && duration <= 30000){
+                return;
+            }else if(mZoomLevel == 1 && duration <= 60000){
+                return;
+            }else if(mZoomLevel == 2 && duration <= 300000){
+                return;
+            }else if(mZoomLevel == 3 && duration <= 600000){
+                return;
+            }
             float zoom = mZooms[mZoomLevel];
             mZoomLevel++;
             mSelectionStart /= zoom;
@@ -412,31 +418,29 @@ public class WaveformView extends View {
                         }
                         if(imageWidth != 0){
                             int top = (int) (12 * mDensity+5);
-                            if(bitmaps != null){
-                                if(s == -1){
-                                    Bitmap b = bitmaps.get(integerSecs - mZoomLevels[mZoomLevel] - mZoomLevels[mZoomLevel]);
-                                    if(b != null){
-                                        int left = l - imageWidth;
-                                        dst.set(left,top,left+imageWidth + 1,top + imageHeight);
-                                        canvas.drawBitmap(b,src,dst,mSelectedLinePaint);
-                                    }
-                                    b = bitmaps.get(integerSecs - mZoomLevels[mZoomLevel]);
-                                    if(b != null){
-                                        int left = i - imageWidth;
-                                        dst.set(left,top,left+imageWidth + 1,top + imageHeight);
-                                        canvas.drawBitmap(b,src,dst,mSelectedLinePaint);
-                                        s = 1;
-                                    }
+                            if(s == -1){
+                                Bitmap b = bitmaps.get(integerSecs - mZoomLevels[mZoomLevel] - mZoomLevels[mZoomLevel]);
+                                if(b != null){
+                                    int left = l - imageWidth;
+                                    dst.set(left,top,left+imageWidth + 1,top + imageHeight);
+                                    canvas.drawBitmap(b,src,dst,mSelectedLinePaint);
                                 }
-                                Bitmap bitmap = bitmaps.get(integerSecs);
-                                if(bitmap != null){
-                                    int left = i;
-                                    dst.set(left,top,left+imageWidth  + 1,top + imageHeight);
-                                    canvas.drawBitmap(bitmap,src,dst,mSelectedLinePaint);
+                                b = bitmaps.get(integerSecs - mZoomLevels[mZoomLevel]);
+                                if(b != null){
+                                    int left = i - imageWidth;
+                                    dst.set(left,top,left+imageWidth + 1,top + imageHeight);
+                                    canvas.drawBitmap(b,src,dst,mSelectedLinePaint);
+                                    s = 1;
                                 }
                             }
+                            Bitmap bitmap = bitmaps.get(integerSecs);
+                            if(bitmap != null){
+                                int left = i;
+                                dst.set(left,top,left+imageWidth  + 1,top + imageHeight);
+                                canvas.drawBitmap(bitmap,src,dst,mSelectedLinePaint);
+                            }
                         }
-                        }
+                    }
 
                     canvas.drawLine(i, 0, i, measuredHeight, mGridPaint);
                 }

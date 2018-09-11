@@ -20,9 +20,11 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 /**
  * Represents a draggable start or end marker.
@@ -67,8 +69,14 @@ public class MarkerView extends ImageView {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if(event.getPointerCount() >= 2){
+            return true;
+        }
         switch(event.getAction()) {
         case MotionEvent.ACTION_DOWN:
+            if(getAlpha() == 0){
+                return false;
+            }
             requestFocus();
             // We use raw x because this window itself is going to
             // move, which will screw up the "local" coordinates

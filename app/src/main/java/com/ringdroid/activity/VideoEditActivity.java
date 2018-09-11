@@ -106,7 +106,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     private VideoEncode videoEncode;
 
     private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(4);
-    private SparseArray<Bitmap> bitmaps = new SparseArray<>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,108 +118,9 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         playerHandler = new Handler();
 
 
-        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/1.mp4";
+        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/1521533868730.mp4";
 
-        fixedThreadPool.execute(new Runnable() {
-            @Override
-            public void run() {
-                MediaMetadataRetriever media = new MediaMetadataRetriever();
-                media.setDataSource(mFilename);
-                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-                for (int i = 0; i <= duration/1000;i+=60 ){
-                    if(fixedThreadPool.isShutdown()){
-                        break;
-                    }
-                    Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
-                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                    bitmaps.put(i,b);
-                    mWaveformView.invalidate();
-                }
-                if(duration % 1000 != 0){
-                    Bitmap bitmap = media.getFrameAtTime(duration, MediaMetadataRetriever.OPTION_CLOSEST);
-                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                    bitmaps.put((int) (duration/1000)+1,b);
-                    mWaveformView.invalidate();
-                }
-                media.release();
-            }
-        });
-        fixedThreadPool.execute(new Runnable() {
-            @Override
-            public void run() {
-                MediaMetadataRetriever media = new MediaMetadataRetriever();
-                media.setDataSource(mFilename);
-                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-                for (int i = 30; i <= duration/1000;i+=60 ){
-                    if(fixedThreadPool.isShutdown()){
-                        break;
-                    }
-                    Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
-                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                    bitmaps.put(i,b);
-                    mWaveformView.invalidate();
-                }
-                media.release();
-            }
-        });
-        fixedThreadPool.execute(new Runnable() {
-            @Override
-            public void run() {
-                MediaMetadataRetriever media = new MediaMetadataRetriever();
-                media.setDataSource(mFilename);
-                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-                for (int i = 10; i <= duration/1000;i+=10 ){
-                    if(fixedThreadPool.isShutdown()){
-                        break;
-                    }
-                    if(i % 30 != 0){
-                        Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
-                        Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                        bitmaps.put(i,b);
-                        mWaveformView.invalidate();
-                    }
-                }
-                media.release();
-            }
-        });
-        fixedThreadPool.execute(new Runnable() {
-            @Override
-            public void run() {
-                MediaMetadataRetriever media = new MediaMetadataRetriever();
-                media.setDataSource(mFilename);
-                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-                for (int i = 5; i <= duration/1000;i+=10 ){
-                    if(fixedThreadPool.isShutdown()){
-                        break;
-                    }
-                    Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
-                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                    bitmaps.put(i,b);
-                    mWaveformView.invalidate();
-                }
-                media.release();
-            }
-        });
-        fixedThreadPool.execute(new Runnable() {
-            @Override
-            public void run() {
-                MediaMetadataRetriever media = new MediaMetadataRetriever();
-                media.setDataSource(mFilename);
-                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-                for (int i = 1; i <= duration/1000;i++ ){
-                    if(fixedThreadPool.isShutdown()){
-                        break;
-                    }
-                    if(i%5 != 0){
-                        Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
-                        Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                        bitmaps.put(i,b);
-                        mWaveformView.invalidate();
-                    }
-                }
-                media.release();
-            }
-        });
+
 
         mKeyDown = false;
 
@@ -251,7 +152,106 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 //        });
 //        videoEncode.init(mFilename);
 
-
+        fixedThreadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                MediaMetadataRetriever media = new MediaMetadataRetriever();
+                media.setDataSource(mFilename);
+                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+                for (int i = 0; i <= duration/1000;i+=60 ){
+                    if(fixedThreadPool.isShutdown()){
+                        break;
+                    }
+                    Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
+                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
+                    mWaveformView.getBitmaps().put(i,b);
+                    mWaveformView.invalidate();
+                }
+                if(duration % 1000 != 0){
+                    Bitmap bitmap = media.getFrameAtTime(duration, MediaMetadataRetriever.OPTION_CLOSEST);
+                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
+                    mWaveformView.getBitmaps().put((int) (duration/1000)+1,b);
+                    mWaveformView.invalidate();
+                }
+                media.release();
+            }
+        });
+        fixedThreadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                MediaMetadataRetriever media = new MediaMetadataRetriever();
+                media.setDataSource(mFilename);
+                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+                for (int i = 30; i <= duration/1000;i+=60 ){
+                    if(fixedThreadPool.isShutdown()){
+                        break;
+                    }
+                    Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
+                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
+                    mWaveformView.getBitmaps().put(i,b);
+                    mWaveformView.invalidate();
+                }
+                media.release();
+            }
+        });
+        fixedThreadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                MediaMetadataRetriever media = new MediaMetadataRetriever();
+                media.setDataSource(mFilename);
+                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+                for (int i = 10; i <= duration/1000;i+=10 ){
+                    if(fixedThreadPool.isShutdown()){
+                        break;
+                    }
+                    if(i % 30 != 0){
+                        Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
+                        Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
+                        mWaveformView.getBitmaps().put(i,b);
+                        mWaveformView.invalidate();
+                    }
+                }
+                media.release();
+            }
+        });
+        fixedThreadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                MediaMetadataRetriever media = new MediaMetadataRetriever();
+                media.setDataSource(mFilename);
+                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+                for (int i = 5; i <= duration/1000;i+=10 ){
+                    if(fixedThreadPool.isShutdown()){
+                        break;
+                    }
+                    Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
+                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
+                    mWaveformView.getBitmaps().put(i,b);
+                    mWaveformView.invalidate();
+                }
+                media.release();
+            }
+        });
+        fixedThreadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                MediaMetadataRetriever media = new MediaMetadataRetriever();
+                media.setDataSource(mFilename);
+                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+                for (int i = 1; i <= duration/1000;i++ ){
+                    if(fixedThreadPool.isShutdown()){
+                        break;
+                    }
+                    if(i%5 != 0){
+                        Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
+                        Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
+                        mWaveformView.getBitmaps().put(i,b);
+                        mWaveformView.invalidate();
+                    }
+                }
+                media.release();
+            }
+        });
 
         mHandler.postDelayed(mTimerRunnable, 100);
     }
@@ -293,7 +293,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
         mWaveformView = (WaveformView)findViewById(R.id.waveform);
         mWaveformView.setListener(this);
-        mWaveformView.setBitmaps(bitmaps);
+
 
         mMaxPos = 0;
         mLastDisplayedStartPos = -1;
@@ -454,7 +454,6 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             mSurface.release();
         }
         mPlayerHandler.removeMessages(100);
-
         fixedThreadPool.shutdown();
         mWaveformView.release();
         super.onDestroy();
