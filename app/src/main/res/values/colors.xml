@@ -10,7 +10,7 @@
     <color name="waveform_unselected_bkgnd_overlay">#a90a242d</color>
     <color name="selection_border">#ffffff</color>
     <color name="playback_indicator">#ffff66</color>
-    <color name="grid_line">#66ffffff</color>
+    <color name="grid_line">#66cccccc</color>
     <color name="timecode">#ddffffdd</color>
     <color name="timecode_shadow">#aa000000</color>
 </resources>

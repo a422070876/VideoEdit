@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.renderscript.ScriptIntrinsicYuvToRGB;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -25,7 +26,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.decoder.DecoderCounters;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
@@ -36,7 +39,9 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
+import com.google.android.exoplayer2.video.VideoRendererEventListener;
 import com.ringdroid.mediacodec.VideoEncode;
+import com.ringdroid.mediacodec.VideoExtractor;
 import com.ringdroid.testvideoedit.R;
 import com.ringdroid.view.CutView;
 import com.ringdroid.view.MarkerView;
@@ -117,8 +122,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
         playerHandler = new Handler();
 
-
-        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/1521533868730.mp4";
+        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/1524204109321.mp4";
 
 
 
@@ -155,101 +159,92 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         fixedThreadPool.execute(new Runnable() {
             @Override
             public void run() {
-                MediaMetadataRetriever media = new MediaMetadataRetriever();
-                media.setDataSource(mFilename);
-                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-                for (int i = 0; i <= duration/1000;i+=60 ){
-                    if(fixedThreadPool.isShutdown()){
-                        break;
+                final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
+
+                videoExtractor.encoder(0, videoExtractor.getDuration()/4, 1,50,50, new VideoExtractor.OnEncodeListener() {
+                    @Override
+                    public void onBitmap(int time, Bitmap bitmap) {
+                        if(fixedThreadPool.isShutdown()){
+                            videoExtractor.stop();
+                        }else{
+                            SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
+                            if(bitmaps != null){
+                                bitmaps.put(time,bitmap);
+                            }
+                            mWaveformView.postInvalidate();
+                        }
+
                     }
-                    Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
-                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                    mWaveformView.getBitmaps().put(i,b);
-                    mWaveformView.invalidate();
-                }
-                if(duration % 1000 != 0){
-                    Bitmap bitmap = media.getFrameAtTime(duration, MediaMetadataRetriever.OPTION_CLOSEST);
-                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                    mWaveformView.getBitmaps().put((int) (duration/1000)+1,b);
-                    mWaveformView.invalidate();
-                }
-                media.release();
+                });
             }
         });
         fixedThreadPool.execute(new Runnable() {
             @Override
             public void run() {
-                MediaMetadataRetriever media = new MediaMetadataRetriever();
-                media.setDataSource(mFilename);
-                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-                for (int i = 30; i <= duration/1000;i+=60 ){
-                    if(fixedThreadPool.isShutdown()){
-                        break;
+                final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
+                long d = videoExtractor.getDuration()/4;
+                long start = d;
+                videoExtractor.encoder(start, start + d , 1,50,50, new VideoExtractor.OnEncodeListener() {
+                    @Override
+                    public void onBitmap(int time, Bitmap bitmap) {
+                        if(fixedThreadPool.isShutdown()){
+                            videoExtractor.stop();
+                        }else{
+                            SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
+                            if(bitmaps != null){
+                                bitmaps.put(time,bitmap);
+                            }
+                            mWaveformView.postInvalidate();
+                        }
+
                     }
-                    Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
-                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                    mWaveformView.getBitmaps().put(i,b);
-                    mWaveformView.invalidate();
-                }
-                media.release();
+                });
             }
         });
         fixedThreadPool.execute(new Runnable() {
             @Override
             public void run() {
-                MediaMetadataRetriever media = new MediaMetadataRetriever();
-                media.setDataSource(mFilename);
-                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-                for (int i = 10; i <= duration/1000;i+=10 ){
-                    if(fixedThreadPool.isShutdown()){
-                        break;
+                final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
+                long d = videoExtractor.getDuration()/4;
+                long start = 2*d;
+                videoExtractor.encoder(start, start + d , 1,50,50, new VideoExtractor.OnEncodeListener() {
+                    @Override
+                    public void onBitmap(int time, Bitmap bitmap) {
+                        if(fixedThreadPool.isShutdown()){
+                            videoExtractor.stop();
+                        }else{
+                            SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
+                            if(bitmaps != null){
+                                bitmaps.put(time,bitmap);
+                            }
+                            mWaveformView.postInvalidate();
+                        }
+
                     }
-                    if(i % 30 != 0){
-                        Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
-                        Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                        mWaveformView.getBitmaps().put(i,b);
-                        mWaveformView.invalidate();
-                    }
-                }
-                media.release();
+                });
             }
         });
         fixedThreadPool.execute(new Runnable() {
             @Override
             public void run() {
-                MediaMetadataRetriever media = new MediaMetadataRetriever();
-                media.setDataSource(mFilename);
-                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-                for (int i = 5; i <= duration/1000;i+=10 ){
-                    if(fixedThreadPool.isShutdown()){
-                        break;
+                final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
+                long d = videoExtractor.getDuration()/4;
+                long start = 3*d;
+                videoExtractor.encoder(start, videoExtractor.getDuration() , 1,50,50, new VideoExtractor.OnEncodeListener() {
+                    @Override
+                    public void onBitmap(int time, Bitmap bitmap) {
+                        if(fixedThreadPool.isShutdown()){
+                            videoExtractor.stop();
+                        }else{
+                            SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
+                            if(bitmaps != null){
+                                bitmaps.put(time,bitmap);
+                            }
+                            mWaveformView.postInvalidate();
+                        }
+
                     }
-                    Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
-                    Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                    mWaveformView.getBitmaps().put(i,b);
-                    mWaveformView.invalidate();
-                }
-                media.release();
-            }
-        });
-        fixedThreadPool.execute(new Runnable() {
-            @Override
-            public void run() {
-                MediaMetadataRetriever media = new MediaMetadataRetriever();
-                media.setDataSource(mFilename);
-                long duration = Long.valueOf(media.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-                for (int i = 1; i <= duration/1000;i++ ){
-                    if(fixedThreadPool.isShutdown()){
-                        break;
-                    }
-                    if(i%5 != 0){
-                        Bitmap bitmap = media.getFrameAtTime(i*1000*1000, MediaMetadataRetriever.OPTION_CLOSEST);
-                        Bitmap b = Bitmap.createScaledBitmap(bitmap,50,50, false);
-                        mWaveformView.getBitmaps().put(i,b);
-                        mWaveformView.invalidate();
-                    }
-                }
-                media.release();
+                });
             }
         });
 
@@ -330,7 +325,6 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             TrackSelector trackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
 
             player = ExoPlayerFactory.newSimpleInstance(this, trackSelector);
-
 
             DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(this,
                     Util.getUserAgent(this, "ExoPlayerTime"), bandwidthMeter);
