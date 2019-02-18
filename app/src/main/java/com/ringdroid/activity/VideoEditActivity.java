@@ -160,7 +160,9 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             @Override
             public void run() {
                 final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
-
+                if(videoExtractor.getDuration()<= 500){
+                    return;
+                }
                 videoExtractor.encoder(0, videoExtractor.getDuration()/4, 1,50,50, new VideoExtractor.OnEncodeListener() {
                     @Override
                     public void onBitmap(int time, Bitmap bitmap) {
@@ -183,8 +185,11 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             public void run() {
                 final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
                 long d = videoExtractor.getDuration()/4;
-                long start = d;
-                videoExtractor.encoder(start, start + d , 1,50,50, new VideoExtractor.OnEncodeListener() {
+                if(videoExtractor.getDuration() == 500){
+                    Log.d("===============","error");
+                    return;
+                }
+                videoExtractor.encoder(d, d*2 , 1,50,50, new VideoExtractor.OnEncodeListener() {
                     @Override
                     public void onBitmap(int time, Bitmap bitmap) {
                         if(fixedThreadPool.isShutdown()){
@@ -205,6 +210,10 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             @Override
             public void run() {
                 final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
+                if(videoExtractor.getDuration() <= 500){
+                    Log.d("===============","error");
+                    return;
+                }
                 long d = videoExtractor.getDuration()/4;
                 long start = 2*d;
                 videoExtractor.encoder(start, start + d , 1,50,50, new VideoExtractor.OnEncodeListener() {
@@ -228,6 +237,10 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             @Override
             public void run() {
                 final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
+                if(videoExtractor.getDuration()<= 500){
+                    Log.d("===============","error");
+                    return;
+                }
                 long d = videoExtractor.getDuration()/4;
                 long start = 3*d;
                 videoExtractor.encoder(start, videoExtractor.getDuration() , 1,50,50, new VideoExtractor.OnEncodeListener() {
@@ -593,7 +606,6 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
     public void markerRight(MarkerView marker, int velocity) {
         mKeyDown = true;
-
         if (marker == mStartMarker) {
             int saveStart = mStartPos;
             mStartPos += velocity;
