@@ -110,7 +110,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
     private VideoEncode videoEncode;
 
-    private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(4);
+    private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(2);
 
 
     @Override
@@ -123,9 +123,6 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         playerHandler = new Handler();
 
         mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/1524204109321.mp4";
-
-
-
         mKeyDown = false;
 
         mHandler = new Handler();
@@ -160,10 +157,13 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             @Override
             public void run() {
                 final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
-                if(videoExtractor.getDuration()<= 500){
-                    return;
+                long d;
+                if(videoExtractor.getDuration()<= 20000){
+                    d = videoExtractor.getDuration();
+                }else{
+                    d = videoExtractor.getDuration()/4;
                 }
-                videoExtractor.encoder(0, videoExtractor.getDuration()/4, 1,50,50, new VideoExtractor.OnEncodeListener() {
+                videoExtractor.encoder(0, d, 1,50,50, new VideoExtractor.OnEncodeListener() {
                     @Override
                     public void onBitmap(int time, Bitmap bitmap) {
                         if(fixedThreadPool.isShutdown()){
@@ -184,12 +184,11 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             @Override
             public void run() {
                 final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
+                if(videoExtractor.getDuration() <= 20000){
+                    return;
+                }
                 long d = videoExtractor.getDuration()/4;
-                if(videoExtractor.getDuration() == 500){
-                    Log.d("===============","error");
-                    return;
-                }
-                videoExtractor.encoder(d, d*2 , 1,50,50, new VideoExtractor.OnEncodeListener() {
+                videoExtractor.encoder(d+1000, d*2 , 1,50,50, new VideoExtractor.OnEncodeListener() {
                     @Override
                     public void onBitmap(int time, Bitmap bitmap) {
                         if(fixedThreadPool.isShutdown()){
@@ -210,13 +209,13 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             @Override
             public void run() {
                 final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
-                if(videoExtractor.getDuration() <= 500){
-                    Log.d("===============","error");
+                if(videoExtractor.getDuration() <= 20000){
                     return;
                 }
                 long d = videoExtractor.getDuration()/4;
                 long start = 2*d;
-                videoExtractor.encoder(start, start + d , 1,50,50, new VideoExtractor.OnEncodeListener() {
+
+                videoExtractor.encoder(start+1000, start + d , 1,50,50, new VideoExtractor.OnEncodeListener() {
                     @Override
                     public void onBitmap(int time, Bitmap bitmap) {
                         if(fixedThreadPool.isShutdown()){
@@ -237,13 +236,12 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             @Override
             public void run() {
                 final VideoExtractor videoExtractor = new VideoExtractor(VideoEditActivity.this,mFilename);
-                if(videoExtractor.getDuration()<= 500){
-                    Log.d("===============","error");
+                if(videoExtractor.getDuration()<= 20000){
                     return;
                 }
                 long d = videoExtractor.getDuration()/4;
                 long start = 3*d;
-                videoExtractor.encoder(start, videoExtractor.getDuration() , 1,50,50, new VideoExtractor.OnEncodeListener() {
+                videoExtractor.encoder(start+1000, videoExtractor.getDuration() , 1,50,50, new VideoExtractor.OnEncodeListener() {
                     @Override
                     public void onBitmap(int time, Bitmap bitmap) {
                         if(fixedThreadPool.isShutdown()){
