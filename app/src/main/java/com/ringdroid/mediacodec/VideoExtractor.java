@@ -66,7 +66,6 @@ public class VideoExtractor {
         }
         stop = true;
         long endTime = duration;
-
         videoExtractor.seekTo(begin*1000,trackIndex);
         FastYUVtoRGB fastYUVtoRGB = new FastYUVtoRGB(context);
         int width = format.getInteger(MediaFormat.KEY_WIDTH);
