@@ -413,7 +413,7 @@ public class VideoEncode {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
                 inputBuffer = mediaCodec.getInputBuffer(inputIndex);
             }else{
-                inputBuffer = audioEncode.getInputBuffers()[inputIndex];
+                inputBuffer = mediaCodec.getInputBuffers()[inputIndex];
             }
             long sampleTime = mediaExtractor.getSampleTime();
             int sampleSize = mediaExtractor.readSampleData(inputBuffer, 0);

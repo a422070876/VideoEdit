@@ -37,6 +37,7 @@ import android.view.View;
 import com.ringdroid.testvideoedit.R;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -64,6 +65,7 @@ public class WaveformView extends View {
         public void waveformDraw();
         public void waveformZoomIn();
         public void waveformZoomOut();
+        public void waveformImage(int loadSecs);
     };
 
     // Colors
@@ -365,6 +367,8 @@ public class WaveformView extends View {
 
     private Rect src = new Rect(0,0,50,50);
     private RectF dst = new RectF();
+    private int imageSecs = -1;
+    private int drawCount = 0;
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -395,6 +399,7 @@ public class WaveformView extends View {
         int imageWidth = 0;
         int imageHeight = 0;
         int c = -1;
+        imageSecs = -1;
         while (i < width) {
             i++;
             fractionalSecs += onePixelInSecs;
@@ -419,18 +424,28 @@ public class WaveformView extends View {
                         if(imageWidth != 0){
                             int top = (int) (12 * mDensity+5);
                             if(s == -1){
-                                Bitmap b = bitmaps.get(integerSecs - mZoomLevels[mZoomLevel] - mZoomLevels[mZoomLevel]);
+                                int oneSecs = integerSecs - mZoomLevels[mZoomLevel] - mZoomLevels[mZoomLevel];
+                                Bitmap b = bitmaps.get(oneSecs);
                                 if(b != null){
                                     int left = l - imageWidth;
                                     dst.set(left,top,left+imageWidth + 1,top + imageHeight);
                                     canvas.drawBitmap(b,src,dst,mSelectedLinePaint);
+                                }else{
+                                    if(imageSecs == -1){
+                                        imageSecs = oneSecs;
+                                    }
                                 }
-                                b = bitmaps.get(integerSecs - mZoomLevels[mZoomLevel]);
+                                int twoSecs = integerSecs - mZoomLevels[mZoomLevel];
+                                b = bitmaps.get(twoSecs);
                                 if(b != null){
                                     int left = i - imageWidth;
                                     dst.set(left,top,left+imageWidth + 1,top + imageHeight);
                                     canvas.drawBitmap(b,src,dst,mSelectedLinePaint);
                                     s = 1;
+                                }else{
+                                    if(imageSecs == -1){
+                                        imageSecs = twoSecs;
+                                    }
                                 }
                             }
                             Bitmap bitmap = bitmaps.get(integerSecs);
@@ -438,15 +453,30 @@ public class WaveformView extends View {
                                 int left = i;
                                 dst.set(left,top,left+imageWidth  + 1,top + imageHeight);
                                 canvas.drawBitmap(bitmap,src,dst,mSelectedLinePaint);
+                            }else{
+                                if(imageSecs == -1){
+                                    imageSecs = integerSecs;
+                                }
                             }
+                            canvas.drawLine(i, 0, i, measuredHeight, mGridPaint);
                         }
                     }
 
-                    canvas.drawLine(i, 0, i, measuredHeight, mGridPaint);
                 }
             }
         }
-
+        drawCount++;
+        postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                drawCount--;
+                if(drawCount == 0 && imageSecs != -1){
+                    if (mListener != null) {
+                        mListener.waveformImage(imageSecs);
+                    }
+                }
+            }
+        },100);
 //        if(bitmaps != null){
 //            int m = i+mOffset;
 //            while (i < m && s < bitmaps.size()){

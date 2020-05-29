@@ -9,6 +9,7 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
+import android.util.Log;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -21,6 +22,7 @@ public class VideoExtractor {
     private static final String VIDEO = "video/";
 
     private Context context;
+    private MediaCodec videoDecoder = null;
     private MediaExtractor videoExtractor;
     private int trackIndex;
     private MediaFormat format = null;
@@ -40,43 +42,7 @@ public class VideoExtractor {
                     break;
                 }
             }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    public long getDuration() {
-        return duration;
-    }
-    public void encoder(OnEncodeListener encodeListener){
-        encoder(0,duration,encodeListener);
-    }
-    public void encoder(long begin, long end,OnEncodeListener encodeListener){
-        encoder(begin,end,0,encodeListener);
-    }
-    public void encoder(long begin, long end,int fps,OnEncodeListener encodeListener){
-        encoder(begin,end,fps,-1,-1,encodeListener);
-    }
-
-    public void encoder(final long begin, final long end, final int fps, final int gifWidth, final int gifHeight, final OnEncodeListener encodeListener){
-        if(begin > duration){
-            throw new RuntimeException("开始时间不能大于视频时长");
-        }
-        if(end <= begin){
-            throw new RuntimeException("开始时间大于结束时间");
-        }
-        long endTime = duration;
-        if (end < duration){
-            endTime = end;
-        }
-        videoExtractor.seekTo(begin*1000,trackIndex);
-        FastYUVtoRGB fastYUVtoRGB = new FastYUVtoRGB(context);
-
-        String mime = format.getString(MediaFormat.KEY_MIME);
-        MediaCodec videoDecoder = null;
-        try {
+            String mime = format.getString(MediaFormat.KEY_MIME);
             videoDecoder = MediaCodec.createDecoderByType(mime);
         } catch (IOException e) {
             e.printStackTrace();
@@ -84,47 +50,58 @@ public class VideoExtractor {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);
         videoDecoder.configure(format, null, null, 0);
         videoDecoder.start();
+    }
+    private OnEncodeListener listener;
 
+    public void setOnEncodeListener(OnEncodeListener listener) {
+        this.listener = listener;
+    }
+
+    public long getDuration() {
+        return duration;
+    }
+    public void encoder(final long begin, final int gifWidth, final int gifHeight){
+        if(begin > duration){
+            throw new RuntimeException("开始时间不能大于视频时长");
+        }
+        stop = true;
+        long endTime = duration;
+
+        videoExtractor.seekTo(begin*1000,trackIndex);
+        FastYUVtoRGB fastYUVtoRGB = new FastYUVtoRGB(context);
         int width = format.getInteger(MediaFormat.KEY_WIDTH);
         int height = format.getInteger(MediaFormat.KEY_HEIGHT);
-
-
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-
-        long frameTime = 1000/fps;
-        long startTime = begin;
         while (stop){
-            int run = extractorVideoInputBuffer(videoExtractor,videoDecoder);
-            if(run == 1){
-                int outIndex = videoDecoder.dequeueOutputBuffer(info, 500000);
-                if(outIndex >= 0){
-                    long time = info.presentationTimeUs/1000;
-                    if(time >= begin && time <= endTime){
-                        if(time >= startTime){
-                            Image image = videoDecoder.getOutputImage(outIndex);
-                            Bitmap bitmap = fastYUVtoRGB.convertYUVtoRGB(getDataFromImage(image),width,height);
-                            if(gifWidth != -1 && gifHeight != -1){
-                                bitmap = Bitmap.createScaledBitmap(bitmap,gifWidth,gifHeight,true);
-                            }else{
-                                bitmap = Bitmap.createScaledBitmap(bitmap,width/4,height/4,true);
-                            }
-                            if(encodeListener != null){
-                                encodeListener.onBitmap((int) (time/1000),bitmap);
-                            }
-//                                    int p = (int) ((startTime - begin)*100/(endTime - begin));
-                            startTime += frameTime;
-                        }
-
+            extractorVideoInputBuffer();
+            int outIndex = videoDecoder.dequeueOutputBuffer(info, 500000);
+            if(outIndex >= 0){
+                long time = info.presentationTimeUs/1000;
+                boolean isOver = false;
+                if(time >= begin && time <= begin+200){
+                    Image image = videoDecoder.getOutputImage(outIndex);
+                    Bitmap bitmap = fastYUVtoRGB.convertYUVtoRGB(getDataFromImage(image),width,height);
+                    if(gifWidth != -1 && gifHeight != -1){
+                        bitmap = Bitmap.createScaledBitmap(bitmap,gifWidth,gifHeight,true);
+                    }else{
+                        bitmap = Bitmap.createScaledBitmap(bitmap,width/4,height/4,true);
                     }
-                    videoDecoder.releaseOutputBuffer(outIndex, true /* Surface init */);
-                    if(time >= endTime){
-                        break;
+                    if(listener != null){
+                        listener.onBitmap((int) (time/1000),bitmap);
                     }
+                    isOver = true;
                 }
-            }else if(run == -1){
-                break;
+                videoDecoder.releaseOutputBuffer(outIndex, true /* Surface init */);
+                if(isOver){
+                    break;
+                }
+                if(time >= endTime){
+                    break;
+                }
             }
         }
+    }
+    public void release(){
         videoDecoder.stop();
         videoDecoder.release();
         videoExtractor.release();
@@ -133,26 +110,28 @@ public class VideoExtractor {
     public void stop(){
         stop = false;
     }
-    private int extractorVideoInputBuffer(MediaExtractor mediaExtractor,MediaCodec mediaCodec){
-        int inputIndex = mediaCodec.dequeueInputBuffer(500000);
+    private void extractorVideoInputBuffer(){
+        int inputIndex = videoDecoder.dequeueInputBuffer(500000);
         if (inputIndex >= 0) {
-            ByteBuffer inputBuffer = mediaCodec.getInputBuffer(inputIndex);
-            long sampleTime = mediaExtractor.getSampleTime();
-            int sampleSize = mediaExtractor.readSampleData(inputBuffer, 0);
-            if (mediaExtractor.advance()) {
-                mediaCodec.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-                return 1;
+            ByteBuffer inputBuffer = videoDecoder.getInputBuffer(inputIndex);
+            long sampleTime = videoExtractor.getSampleTime();
+            int sampleSize = videoExtractor.readSampleData(inputBuffer, 0);
+            if (videoExtractor.advance()) {
+                videoDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
             } else {
                 if(sampleSize > 0){
-                    mediaCodec.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
-                    return 1;
+                    videoDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
+                    videoExtractor.seekTo(0,trackIndex);
                 }else{
-                    return -1;
+                    videoExtractor.seekTo(0,trackIndex);
+                    sampleTime = videoExtractor.getSampleTime();
+                    sampleSize = videoExtractor.readSampleData(inputBuffer, 0);
+                    if (videoExtractor.advance()) {
+                        videoDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
+                    }
                 }
-
             }
         }
-        return 0;
     }
     private byte[] getDataFromImage(Image image) {
         Rect crop = image.getCropRect();
