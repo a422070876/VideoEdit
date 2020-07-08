@@ -618,13 +618,6 @@ public class WaveformView extends View {
         mLenByZoomLevel = new int[5];
         mZoomFactorByZoomLevel = new double[5];
         mValuesByZoomLevel = new double[5][];
-
-        // Level 0 is doubled, with interpolated values
-        mLenByZoomLevel[0] = numFrames*2;
-        mZoomFactorByZoomLevel[0] = 2.0;
-
-        // Level 1 is normal
-        // Level 0 is doubled, with interpolated values
         // Level 0 is doubled, with interpolated values
         mLenByZoomLevel[0] = numFrames * 2;
         mZoomFactorByZoomLevel[0] = 2.0;
