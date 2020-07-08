@@ -120,7 +120,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
         playerHandler = new Handler();
 
-        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/doutinghao_10_0.mp4";
+        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/1/[Mabors-Sub][Youjo Senki][Movie][1080P][GB][BDrip][AVC AAC YUV420P8].mp4";
         mKeyDown = false;
 
         mHandler = new Handler();
@@ -562,7 +562,6 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     @Override
     public void waveformImage(final int loadSecs) {
         if(!isImageLoad){
-            Log.d("=========","waveformImage");
             isImageLoad = true;
             fixedThreadPool.execute(new Runnable() {
                 @Override

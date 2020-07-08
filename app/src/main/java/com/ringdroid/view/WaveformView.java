@@ -208,17 +208,6 @@ public class WaveformView extends View {
     }
 
 
-    private MediaMetadataRetriever media;
-    private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(3);
-    public void setFileName(String fileName){
-        if(media != null){
-            media.release();
-            media= null;
-        }
-        media = new MediaMetadataRetriever();
-        media.setDataSource(fileName);
-    }
-
     public void setDuration(long duration) {
         this.duration = duration;
         computeDoublesForAllZoomLevels();
@@ -369,6 +358,7 @@ public class WaveformView extends View {
     private Rect src = new Rect(0,0,50,50);
     private RectF dst = new RectF();
     private int imageSecs = -1;
+    private int imageWidth = -1,imageHeight = -1;
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -390,42 +380,44 @@ public class WaveformView extends View {
 
         // Draw grid
         double onePixelInSecs = pixelsToSeconds(1);
-        boolean onlyEveryFiveSecs = (onePixelInSecs > 1.0 / 50.0);
+
         double fractionalSecs = mOffset * onePixelInSecs;
         int integerSecs = (int) fractionalSecs;
         int i = 0;
         int s = -1;
         int l = -1;
-        int imageWidth = 0;
-        int imageHeight = 0;
+
         int c = -1;
         imageSecs = -1;
         removeBitmaps.clear();
+        int drawWidth = 0;
         while (i < width) {
             i++;
             fractionalSecs += onePixelInSecs;
             int integerSecsNew = (int) fractionalSecs;
             if (integerSecsNew != integerSecs) {
                 integerSecs = integerSecsNew;
-                if (!onlyEveryFiveSecs || 0 == (integerSecs % 5)) {
-
-                    if(integerSecs%mZoomLevels[mZoomLevel] == 0){
-                        if(c == -1){
-                            c = integerSecs;
-                            l = i;
+                if(integerSecs%mZoomLevels[mZoomLevel] == 0){
+                    if(c == -1){
+                        c = integerSecs;
+                        l = i;
+                    }
+                    if(c != integerSecs){
+                        if(drawWidth == 0){
+                            drawWidth = i - l;
                         }
-                        if(c != integerSecs){
-                            if(imageWidth == 0){
-                                imageWidth = i - l;
-                            }
-                            if(imageHeight == 0){
-                                imageHeight = getMeasuredHeight() - 10 - (int) (12 * mDensity+5);
-                            }
-                        }
-                        if(imageWidth != 0){
-                            int top = (int) (12 * mDensity+5);
-                            if(s == -1){
-                                int oneSecs = integerSecs - mZoomLevels[mZoomLevel] - mZoomLevels[mZoomLevel];
+                    }
+                    if(imageHeight <= 0){
+                        imageHeight = getMeasuredHeight() - 10 - (int) (12 * mDensity+5);
+                    }
+                    if(drawWidth != 0 && drawWidth != imageWidth){
+                        imageWidth = drawWidth;
+                    }
+                    if(imageWidth != 0){
+                        int top = (int) (12 * mDensity+5);
+                        if(s == -1){
+                            int oneSecs = integerSecs - mZoomLevels[mZoomLevel] - mZoomLevels[mZoomLevel];
+                            if(oneSecs >= 0){
                                 Bitmap b = bitmaps.get(oneSecs);
                                 if(b != null){
                                     removeBitmaps.put(oneSecs,b);
@@ -439,8 +431,11 @@ public class WaveformView extends View {
                                         imageSecs = oneSecs;
                                     }
                                 }
-                                int twoSecs = integerSecs - mZoomLevels[mZoomLevel];
-                                b = bitmaps.get(twoSecs);
+                            }
+
+                            int twoSecs = integerSecs - mZoomLevels[mZoomLevel];
+                            if(twoSecs >= 0){
+                                Bitmap b = bitmaps.get(twoSecs);
                                 if(b != null){
                                     removeBitmaps.put(twoSecs,b);
                                     src.right = b.getWidth();
@@ -455,6 +450,8 @@ public class WaveformView extends View {
                                     }
                                 }
                             }
+                        }
+                        if(integerSecs >= 0){
                             Bitmap bitmap = bitmaps.get(integerSecs);
                             if(bitmap != null){
                                 removeBitmaps.put(integerSecs,bitmap);
@@ -468,10 +465,9 @@ public class WaveformView extends View {
                                     imageSecs = integerSecs;
                                 }
                             }
-                            canvas.drawLine(i, 0, i, measuredHeight, mGridPaint);
                         }
+                        canvas.drawLine(i, 0, i, measuredHeight, mGridPaint);
                     }
-
                 }
             }
         }
@@ -484,8 +480,9 @@ public class WaveformView extends View {
         postDelayed(new Runnable() {
             @Override
             public void run() {
-                if(imageSecs != -1){
+                if(imageSecs !=  -1){
                     if (mListener != null) {
+                        Log.d("==============","imageSecs = "+imageSecs);
                         mListener.waveformImage(imageSecs);
                     }
                 }
@@ -622,6 +619,12 @@ public class WaveformView extends View {
         mZoomFactorByZoomLevel = new double[5];
         mValuesByZoomLevel = new double[5][];
 
+        // Level 0 is doubled, with interpolated values
+        mLenByZoomLevel[0] = numFrames*2;
+        mZoomFactorByZoomLevel[0] = 2.0;
+
+        // Level 1 is normal
+        // Level 0 is doubled, with interpolated values
         // Level 0 is doubled, with interpolated values
         mLenByZoomLevel[0] = numFrames * 2;
         mZoomFactorByZoomLevel[0] = 2.0;
