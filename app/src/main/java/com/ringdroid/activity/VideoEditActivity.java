@@ -120,7 +120,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
         playerHandler = new Handler();
 
-        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/1555407017029.mp4";
+        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/doutinghao_10_0.mp4";
         mKeyDown = false;
 
         mHandler = new Handler();
@@ -264,11 +264,13 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
                 if(fixedThreadPool.isShutdown()){
                     videoExtractor.stop();
                 }else{
-                    SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
-                    if(bitmaps != null){
-                        bitmaps.put(time,bitmap);
+                    if(time >= 0){
+                        SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
+                        if(bitmaps != null){
+                            bitmaps.put(time,bitmap);
+                        }
+                        mWaveformView.postInvalidate();
                     }
-                    mWaveformView.postInvalidate();
                 }
             }
         });
@@ -560,13 +562,13 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     @Override
     public void waveformImage(final int loadSecs) {
         if(!isImageLoad){
+            Log.d("=========","waveformImage");
             isImageLoad = true;
             fixedThreadPool.execute(new Runnable() {
                 @Override
                 public void run() {
                     long begin = loadSecs*1000;
-                    videoExtractor.encoder(begin,  50,50);
-
+                    videoExtractor.encoder(begin,  -1,-1);
                 }
             });
         }
@@ -1061,17 +1063,17 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         videoEncode.setEncoderListener(new VideoEncode.OnEncoderListener() {
             @Override
             public void onStart() {
-
+                Log.d("============","onStart");
             }
 
             @Override
             public void onStop() {
-
+                Log.d("============","onStop");
             }
 
             @Override
             public void onProgress(int progress) {
-
+                Log.d("============","onProgress = "+progress);
             }
         });
         float[] cutArr = cutView.getCutArr();

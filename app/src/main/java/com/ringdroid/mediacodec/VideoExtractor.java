@@ -71,12 +71,17 @@ public class VideoExtractor {
         int width = format.getInteger(MediaFormat.KEY_WIDTH);
         int height = format.getInteger(MediaFormat.KEY_HEIGHT);
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+        int runCount = 0;
+        boolean isRound = false;
         while (stop){
-            extractorVideoInputBuffer();
+            boolean isR = extractorVideoInputBuffer();
+            if(isR){
+                isRound = true;
+            }
             int outIndex = videoDecoder.dequeueOutputBuffer(info, 500000);
+            boolean isOver = false;
             if(outIndex >= 0){
                 long time = info.presentationTimeUs/1000;
-                boolean isOver = false;
                 if(time >= begin && time <= begin+200){
                     Image image = videoDecoder.getOutputImage(outIndex);
                     Bitmap bitmap = fastYUVtoRGB.convertYUVtoRGB(getDataFromImage(image),width,height);
@@ -89,6 +94,11 @@ public class VideoExtractor {
                         listener.onBitmap((int) (time/1000),bitmap);
                     }
                     isOver = true;
+                }else if(isRound&&runCount > 4){
+                    if(listener != null){
+                        listener.onBitmap(-1,null);
+                    }
+                    isOver = true;
                 }
                 videoDecoder.releaseOutputBuffer(outIndex, true /* Surface init */);
                 if(isOver){
@@ -97,6 +107,7 @@ public class VideoExtractor {
                 if(time >= endTime){
                     break;
                 }
+                runCount++;
             }
         }
     }
@@ -109,7 +120,7 @@ public class VideoExtractor {
     public void stop(){
         stop = false;
     }
-    private void extractorVideoInputBuffer(){
+    private boolean extractorVideoInputBuffer(){
         int inputIndex = videoDecoder.dequeueInputBuffer(500000);
         if (inputIndex >= 0) {
             ByteBuffer inputBuffer = videoDecoder.getInputBuffer(inputIndex);
@@ -129,8 +140,10 @@ public class VideoExtractor {
                         videoDecoder.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
                     }
                 }
+                return true;
             }
         }
+        return false;
     }
     private byte[] getDataFromImage(Image image) {
         Rect crop = image.getCropRect();

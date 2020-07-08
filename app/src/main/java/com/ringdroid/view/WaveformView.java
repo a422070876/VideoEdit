@@ -95,6 +95,7 @@ public class WaveformView extends View {
     private GestureDetector mGestureDetector;
     private ScaleGestureDetector mScaleGestureDetector;
     private SparseArray<Bitmap> bitmaps;
+    private SparseArray<Bitmap> removeBitmaps;
     private boolean mInitialized;
 
     private long duration = 0;
@@ -102,7 +103,6 @@ public class WaveformView extends View {
     private static float mZooms[] = new float[]{10,2,2.5f,2};
     public WaveformView(Context context, AttributeSet attrs) {
         super(context, attrs);
-
         // We don't want keys, the markers get these
         setFocusable(false);
 
@@ -181,6 +181,7 @@ public class WaveformView extends View {
         mInitialized = false;
 
         bitmaps = new SparseArray<>();
+        removeBitmaps = new SparseArray<>();
     }
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -368,7 +369,6 @@ public class WaveformView extends View {
     private Rect src = new Rect(0,0,50,50);
     private RectF dst = new RectF();
     private int imageSecs = -1;
-    private int drawCount = 0;
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -400,6 +400,7 @@ public class WaveformView extends View {
         int imageHeight = 0;
         int c = -1;
         imageSecs = -1;
+        removeBitmaps.clear();
         while (i < width) {
             i++;
             fractionalSecs += onePixelInSecs;
@@ -427,6 +428,9 @@ public class WaveformView extends View {
                                 int oneSecs = integerSecs - mZoomLevels[mZoomLevel] - mZoomLevels[mZoomLevel];
                                 Bitmap b = bitmaps.get(oneSecs);
                                 if(b != null){
+                                    removeBitmaps.put(oneSecs,b);
+                                    src.right = b.getWidth();
+                                    src.bottom = b.getHeight();
                                     int left = l - imageWidth;
                                     dst.set(left,top,left+imageWidth + 1,top + imageHeight);
                                     canvas.drawBitmap(b,src,dst,mSelectedLinePaint);
@@ -438,6 +442,9 @@ public class WaveformView extends View {
                                 int twoSecs = integerSecs - mZoomLevels[mZoomLevel];
                                 b = bitmaps.get(twoSecs);
                                 if(b != null){
+                                    removeBitmaps.put(twoSecs,b);
+                                    src.right = b.getWidth();
+                                    src.bottom = b.getHeight();
                                     int left = i - imageWidth;
                                     dst.set(left,top,left+imageWidth + 1,top + imageHeight);
                                     canvas.drawBitmap(b,src,dst,mSelectedLinePaint);
@@ -450,6 +457,9 @@ public class WaveformView extends View {
                             }
                             Bitmap bitmap = bitmaps.get(integerSecs);
                             if(bitmap != null){
+                                removeBitmaps.put(integerSecs,bitmap);
+                                src.right = bitmap.getWidth();
+                                src.bottom = bitmap.getHeight();
                                 int left = i;
                                 dst.set(left,top,left+imageWidth  + 1,top + imageHeight);
                                 canvas.drawBitmap(bitmap,src,dst,mSelectedLinePaint);
@@ -465,18 +475,23 @@ public class WaveformView extends View {
                 }
             }
         }
-        drawCount++;
+        bitmaps.clear();
+        for (int k = 0; k < removeBitmaps.size(); k++){
+            int key = removeBitmaps.keyAt(k);
+            bitmaps.put(key,removeBitmaps.get(key));
+        }
+        removeBitmaps.clear();
         postDelayed(new Runnable() {
             @Override
             public void run() {
-                drawCount--;
-                if(drawCount == 0 && imageSecs != -1){
+                if(imageSecs != -1){
                     if (mListener != null) {
                         mListener.waveformImage(imageSecs);
                     }
                 }
             }
         },100);
+
 //        if(bitmaps != null){
 //            int m = i+mOffset;
 //            while (i < m && s < bitmaps.size()){
