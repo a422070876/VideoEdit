@@ -60,6 +60,9 @@ public class VideoExtractor {
     public long getDuration() {
         return duration;
     }
+    public void encoder(long begin){
+        encoder(begin,-1,-1);
+    }
     public void encoder(final long begin, final int gifWidth, final int gifHeight){
         if(begin > duration){
             throw new RuntimeException("开始时间不能大于视频时长");
@@ -70,6 +73,14 @@ public class VideoExtractor {
         FastYUVtoRGB fastYUVtoRGB = new FastYUVtoRGB(context);
         int width = format.getInteger(MediaFormat.KEY_WIDTH);
         int height = format.getInteger(MediaFormat.KEY_HEIGHT);
+        float vh = width *1.0f/ height;
+        int w = 300;
+        int h = 300;
+        if(width > height){
+            h = (int) (w/vh);
+        }else if(width < height){
+            w = (int) (h*vh);
+        }
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
         int runCount = 0;
         boolean isRound = false;
@@ -88,7 +99,7 @@ public class VideoExtractor {
                     if(gifWidth != -1 && gifHeight != -1){
                         bitmap = Bitmap.createScaledBitmap(bitmap,gifWidth,gifHeight,true);
                     }else{
-                        bitmap = Bitmap.createScaledBitmap(bitmap,width/4,height/4,true);
+                        bitmap = Bitmap.createScaledBitmap(bitmap,w,h,true);
                     }
                     if(listener != null){
                         listener.onBitmap((int) (time/1000),bitmap);

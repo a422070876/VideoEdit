@@ -120,7 +120,9 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
         playerHandler = new Handler();
 
-        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/1/[Mabors-Sub][Youjo Senki][Movie][1080P][GB][BDrip][AVC AAC YUV420P8].mp4";
+//        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/1/[Mabors-Sub][Youjo Senki][Movie][1080P][GB][BDrip][AVC AAC YUV420P8].mp4";
+//        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/doutinghao_10_0.mp4";
+        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath()+"/DCIM/Camera/0c397c359aa7468e431f59a375a63f29.mp4";
         mKeyDown = false;
 
         mHandler = new Handler();
@@ -266,7 +268,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
                 }else{
                     if(time >= 0){
                         SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
-                        if(bitmaps != null){
+                        if(bitmaps != null && bitmaps.get(time) == null){
                             bitmaps.put(time,bitmap);
                         }
                         mWaveformView.postInvalidate();
@@ -441,10 +443,11 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         }
     };
 
-
+    private boolean isPause = false;
     @Override
     protected void onPause() {
         super.onPause();
+        isPause = true;
         if(player == null){
             return;
         }
@@ -454,6 +457,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     @Override
     protected void onResume() {
         super.onResume();
+        isPause = false;
         if(mIsPlaying && player != null){
             player.setPlayWhenReady(true);
         }
@@ -561,13 +565,16 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     private boolean isImageLoad = false;
     @Override
     public void waveformImage(final int loadSecs) {
+        if(isPause){
+          return;
+        }
         if(!isImageLoad){
             isImageLoad = true;
             fixedThreadPool.execute(new Runnable() {
                 @Override
                 public void run() {
                     long begin = loadSecs*1000;
-                    videoExtractor.encoder(begin,  -1,-1);
+                    videoExtractor.encoder(begin);
                 }
             });
         }
