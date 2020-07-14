@@ -121,8 +121,8 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         playerHandler = new Handler();
 
 //        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/1/[Mabors-Sub][Youjo Senki][Movie][1080P][GB][BDrip][AVC AAC YUV420P8].mp4";
-//        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/doutinghao_10_0.mp4";
-        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath()+"/DCIM/Camera/0c397c359aa7468e431f59a375a63f29.mp4";
+        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/doutinghao_10_0.mp4";
+//        mFilename = Environment.getExternalStorageDirectory().getAbsolutePath()+"/DCIM/Camera/0c397c359aa7468e431f59a375a63f29.mp4";
         mKeyDown = false;
 
         mHandler = new Handler();
