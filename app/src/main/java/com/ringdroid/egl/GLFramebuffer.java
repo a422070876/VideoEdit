@@ -134,7 +134,9 @@ public class GLFramebuffer {
         return surfaceTexture;
     }
 
-
+    public SurfaceTexture getSurfaceTexture(){
+        return surfaceTexture;
+    }
 
 
     public void drawFrameBuffer(){
@@ -169,5 +171,9 @@ public class GLFramebuffer {
 //        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
 //        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
 //    }
-
+    public void release(){
+        GLES20.glDeleteBuffers(vertexBuffers.length,vertexBuffers,0);
+        GLES20.glDeleteTextures(textures.length,textures,0);
+        GLES20.glDeleteProgram(programId);
+    }
 }

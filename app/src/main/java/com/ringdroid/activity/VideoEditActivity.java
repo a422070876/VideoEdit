@@ -9,6 +9,7 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Message;
 import android.renderscript.ScriptIntrinsicYuvToRGB;
 import android.support.v7.app.AppCompatActivity;
@@ -24,6 +25,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Format;
@@ -108,14 +110,18 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     private RelativeLayout videoView;
     private CutView cutView;
 
-    private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
+//    private ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
 
     private VideoExtractor videoExtractor;
+    private Handler videoHandler;
+    private HandlerThread videoThread;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video_edit);
-
+        videoThread = new HandlerThread("VideoExtractor");
+        videoThread.start();
+        videoHandler = new Handler(videoThread.getLooper());
         mIsPlaying = false;
 
         playerHandler = new Handler();
@@ -263,7 +269,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             @Override
             public void onBitmap(int time, Bitmap bitmap) {
                 isImageLoad = false;
-                if(fixedThreadPool.isShutdown()){
+                if(isPause){
                     videoExtractor.stop();
                 }else{
                     if(time >= 0){
@@ -372,7 +378,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            if(player != null && player.getDuration() > 0 && player.getVideoFormat() != null){
+            if(player != null && player.getDuration() > 0 && player.getVideoFormat() != null && !isPause){
 
                 finishOpeningSoundFile();
                 String mCaption = "0.00 seconds "+formatTime(mMaxPos) + " " +
@@ -477,11 +483,18 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         if(mSurface != null){
             mSurface.release();
         }
-        if(videoExtractor != null){
-            videoExtractor.release();
-        }
+        videoHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if(videoExtractor != null){
+                    videoExtractor.stop();
+                    videoExtractor.release();
+                }
+                videoThread.quit();
+            }
+        });
         mPlayerHandler.removeMessages(100);
-        fixedThreadPool.shutdown();
+//        fixedThreadPool.shutdown();
         mWaveformView.release();
         super.onDestroy();
     }
@@ -570,15 +583,21 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         }
         if(!isImageLoad){
             isImageLoad = true;
-            fixedThreadPool.execute(new Runnable() {
+            videoHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     long begin = loadSecs*1000;
                     videoExtractor.encoder(begin);
                 }
             });
+//            fixedThreadPool.execute(new Runnable() {
+//                @Override
+//                public void run() {
+//                    long begin = loadSecs*1000;
+//                    videoExtractor.encoder(begin);
+//                }
+//            });
         }
-
     }
     //
     // MarkerListener
@@ -1065,7 +1084,13 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
 
     public void onConfirm(View view){
-        VideoEncode videoEncode = new VideoEncode();
+        long vst = (long)(Double.parseDouble(formatTime(mStartPos))*1000*1000);
+        long vse = (long)(Double.parseDouble(formatTime(mEndPos))*1000*1000);
+        if(vse - vst < 5 * 1000*1000){
+            Toast.makeText(this,"时长不能小于5秒",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final VideoEncode videoEncode = new VideoEncode();
         videoEncode.setEncoderListener(new VideoEncode.OnEncoderListener() {
             @Override
             public void onStart() {
@@ -1075,6 +1100,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
             @Override
             public void onStop() {
                 Log.d("============","onStop");
+                videoEncode.release();
             }
 
             @Override
@@ -1119,8 +1145,8 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
                 f, t
         };
         videoEncode.init(mFilename,
-                (long)(Double.valueOf(formatTime(mStartPos))*1000*1000),
-                (long)(Double.valueOf(formatTime(mEndPos))*1000*1000),
+                vst,
+                vse,
                 cropWidth,cropHeight,textureVertexData);
     }
 

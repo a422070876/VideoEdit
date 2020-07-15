@@ -47,6 +47,7 @@ public class VideoExtractor {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        frameTime = 0;
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);
         videoDecoder.configure(format, null, null, 0);
         videoDecoder.start();
@@ -56,7 +57,11 @@ public class VideoExtractor {
     public void setOnEncodeListener(OnEncodeListener listener) {
         this.listener = listener;
     }
+    private long frameTime = 0;
 
+    public long getFrameTime() {
+        return frameTime;
+    }
     public long getDuration() {
         return duration;
     }
@@ -82,18 +87,25 @@ public class VideoExtractor {
             w = (int) (h*vh);
         }
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-        int runCount = 0;
-        boolean isRound = false;
+        long roundTime = -1;
+        long ft = 0;
         while (stop){
             boolean isR = extractorVideoInputBuffer();
             if(isR){
-                isRound = true;
+                roundTime = frameTime*2;
             }
             int outIndex = videoDecoder.dequeueOutputBuffer(info, 500000);
             boolean isOver = false;
             if(outIndex >= 0){
                 long time = info.presentationTimeUs/1000;
-                if(time >= begin && time <= begin+200){
+                if(frameTime == 0 ){
+                    if(ft == 0){
+                        ft = info.presentationTimeUs;
+                    }else if(info.presentationTimeUs > ft){
+                        frameTime = info.presentationTimeUs - ft;
+                    }
+                }
+                if(time >= begin){
                     Image image = videoDecoder.getOutputImage(outIndex);
                     Bitmap bitmap = fastYUVtoRGB.convertYUVtoRGB(getDataFromImage(image),width,height);
                     if(gifWidth != -1 && gifHeight != -1){
@@ -105,7 +117,8 @@ public class VideoExtractor {
                         listener.onBitmap((int) (time/1000),bitmap);
                     }
                     isOver = true;
-                }else if(isRound&&runCount > 4){
+                }
+                if(!isOver && time <= roundTime + 5){
                     if(listener != null){
                         listener.onBitmap(-1,null);
                     }
@@ -118,7 +131,6 @@ public class VideoExtractor {
                 if(time >= endTime){
                     break;
                 }
-                runCount++;
             }
         }
     }

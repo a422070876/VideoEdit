@@ -89,8 +89,6 @@ public class VideoEncode {
                      final int cropWidth, final int cropHeight, final float[] textureVertexData){
         this.startTime = startTime;
         this.endTime = endTime;
-        Log.d("=============","startTime = "+startTime);
-        Log.d("=============","endTime = "+endTime);
         videoInit = false;
         audioInit = false;
         String path = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/VideoEdit.mp4";
@@ -225,6 +223,9 @@ public class VideoEncode {
                 MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
                 boolean isOver = false;
                 long startTimeUs = -1;
+                long frameTime = 0;
+                long roundTime = -1;
+                long ft = 0;
                 while (true) {
                     if(!audioInit){
                         synchronized (videoObject){
@@ -241,6 +242,13 @@ public class VideoEncode {
                         int outIndex = videoDecoder.dequeueOutputBuffer(info, 50000);
                         if(outIndex >= 0){
                             presentationTimeUs = info.presentationTimeUs;
+                            if(frameTime == 0 ){
+                                if(ft == 0){
+                                    ft = info.presentationTimeUs;
+                                }else if(info.presentationTimeUs > ft){
+                                    frameTime = info.presentationTimeUs - ft;
+                                }
+                            }
                             if(startTimeUs == -1){
                                 startTimeUs = presentationTimeUs;
                             }
@@ -264,8 +272,9 @@ public class VideoEncode {
                         }
                         if(run == 2){
                             isOver = true;
+                            roundTime = frameTime*2;
                         }
-                        if(isOver && presentationTimeUs <= startTimeUs){
+                        if(isOver && presentationTimeUs <= roundTime+5){
                             videoEncode.signalEndOfInputStream();
                             break;
                         }
@@ -278,10 +287,10 @@ public class VideoEncode {
                         }
                     }
                 }
-
                 eglHandler.post(new Runnable() {
                     @Override
                     public void run() {
+                        mFramebuffer.release();
                         mEglUtils.release();
                     }
                 });
@@ -408,7 +417,32 @@ public class VideoEncode {
         }
 
     }
-
+    public void release(){
+        videoHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                videoThread.quit();
+            }
+        });
+        eglHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                eglThread.quit();
+            }
+        });
+        audioDecoderHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                audioDecoderThread.quit();
+            }
+        });
+        audioEncodeHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                audioEncodeThread.quit();
+            }
+        });
+    }
 
     private int extractorInputBuffer(MediaExtractor mediaExtractor,MediaCodec mediaCodec,int trackIndex){
         int inputIndex = mediaCodec.dequeueInputBuffer(50000);
