@@ -89,7 +89,6 @@ public class VideoEncode {
                      final int cropWidth, final int cropHeight, final float[] textureVertexData){
         this.startTime = startTime;
         this.endTime = endTime;
-        videoInit = false;
         audioInit = false;
         String path = Environment.getExternalStorageDirectory().getAbsolutePath() +"/HMSDK/video/VideoEdit.mp4";
 
@@ -181,9 +180,11 @@ public class VideoEncode {
                             surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                                 @Override
                                 public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-                                    mFramebuffer.drawFrameBuffer();
-                                    mEglUtils.swap();
-                                    isDraw = true;
+                                    if(!isDraw){
+                                        mFramebuffer.drawFrameBuffer();
+                                        mEglUtils.swap();
+                                        isDraw = true;
+                                    }
                                 }
                             });
                             videoDecoder.configure(format, new Surface(surfaceTexture), null, 0 /* Decoder */);
@@ -202,19 +203,14 @@ public class VideoEncode {
         }
     }
     private long presentationTimeUs;
-    private final Object audioObject = new Object();
-    private final Object videoObject = new Object();
 
     private boolean isDraw = false;
 
     private boolean muxerStart = false;
-    private boolean videoInit = false;
     private boolean audioInit = false;
-
 
     private void start(){
         muxerStart = false;
-        videoInit = false;
         audioInit = false;
         videoHandler.post(new Runnable() {
             @Override
@@ -228,12 +224,11 @@ public class VideoEncode {
                 long ft = 0;
                 while (true) {
                     if(!audioInit){
-                        synchronized (videoObject){
-                            try {
-                                videoObject.wait(50);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
+                        try {
+                            Thread.sleep(5);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                            Thread.currentThread().interrupt();
                         }
                         continue;
                     }
@@ -252,8 +247,8 @@ public class VideoEncode {
                             if(startTimeUs == -1){
                                 startTimeUs = presentationTimeUs;
                             }
-                            videoDecoder.releaseOutputBuffer(outIndex, true /* Surface init */);
                             isDraw = false;
+                            videoDecoder.releaseOutputBuffer(outIndex, true /* Surface init */);
                             while (!isDraw){
                                 try {
                                     Thread.sleep(5);
@@ -277,13 +272,6 @@ public class VideoEncode {
                         if(isOver && presentationTimeUs <= roundTime+5){
                             videoEncode.signalEndOfInputStream();
                             break;
-                        }
-                    }else{
-                        try {
-                            Thread.sleep(50);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                            Thread.currentThread().interrupt();
                         }
                     }
                 }
@@ -311,12 +299,11 @@ public class VideoEncode {
                 MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
                 while (true) {
                     if(!muxerStart){
-                        synchronized (audioObject){
-                            try {
-                                audioObject.wait(50);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
+                        try {
+                            Thread.sleep(5);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                            Thread.currentThread().interrupt();
                         }
                         continue;
                     }
@@ -507,7 +494,6 @@ public class VideoEncode {
                 if(videoTrackIndex == -1){
                     MediaFormat mediaFormat = mediaCodec.getOutputFormat();
                     videoTrackIndex = mediaMuxer.addTrack(mediaFormat);
-                    videoInit = true;
                     initMuxer();
                 }
             }
