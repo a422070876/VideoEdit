@@ -510,9 +510,6 @@ public class VideoEncode {
                 inputBuffer = mediaCodec.getInputBuffers()[inputIndex];
             }
             long sampleTime = mediaExtractor.getSampleTime();
-//            if(sampleTime >= endTime){
-//                return;
-//            }
             int sampleSize = mediaExtractor.readSampleData(inputBuffer, 0);
             if (mediaExtractor.advance()) {
                 mediaCodec.queueInputBuffer(inputIndex, 0, sampleSize, sampleTime, 0);
