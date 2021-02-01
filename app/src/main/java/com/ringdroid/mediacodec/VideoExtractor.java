@@ -68,10 +68,9 @@ public class VideoExtractor {
     public void encoder(long begin){
         encoder(begin,-1,-1);
     }
-    public void encoder(final long begin, final int gifWidth, final int gifHeight){
-        if(begin > duration){
-            throw new RuntimeException("开始时间不能大于视频时长");
-        }
+    public void encoder(long begin, final int gifWidth, final int gifHeight){
+        int key = (int) (begin/1000);
+        if(begin > duration) begin = duration;
         stop = true;
         long endTime = duration;
         videoExtractor.seekTo(begin*1000,trackIndex);
@@ -87,13 +86,13 @@ public class VideoExtractor {
             w = (int) (h*vh);
         }
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-        long roundTime = -1;
+//        long roundTime = -1;
         long ft = 0;
         while (stop){
             boolean isR = extractorVideoInputBuffer();
-            if(isR){
-                roundTime = frameTime*2;
-            }
+//            if(isR){
+//                roundTime = frameTime*2;
+//            }
             int outIndex = videoDecoder.dequeueOutputBuffer(info, 500000);
             boolean isOver = false;
             if(outIndex >= 0){
@@ -105,7 +104,7 @@ public class VideoExtractor {
                         frameTime = info.presentationTimeUs - ft;
                     }
                 }
-                if(time >= begin){
+                if(time >= begin || isR){
                     Image image = videoDecoder.getOutputImage(outIndex);
                     Bitmap bitmap = fastYUVtoRGB.convertYUVtoRGB(getDataFromImage(image),width,height);
                     if(gifWidth != -1 && gifHeight != -1){
@@ -114,16 +113,16 @@ public class VideoExtractor {
                         bitmap = Bitmap.createScaledBitmap(bitmap,w,h,true);
                     }
                     if(listener != null){
-                        listener.onBitmap((int) (time/1000),bitmap);
+                        listener.onBitmap(key,bitmap);
                     }
                     isOver = true;
                 }
-                if(!isOver && time <= roundTime + 5){
-                    if(listener != null){
-                        listener.onBitmap(-1,null);
-                    }
-                    isOver = true;
-                }
+//                if(!isOver && time <= roundTime + 5){
+//                    if(listener != null){
+//                        listener.onBitmap(-1,null);
+//                    }
+//                    isOver = true;
+//                }
                 videoDecoder.releaseOutputBuffer(outIndex, true /* Surface init */);
                 if(isOver){
                     break;
