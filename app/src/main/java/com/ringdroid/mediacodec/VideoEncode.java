@@ -267,7 +267,6 @@ public class VideoEncode {
                         }
                         if(run == 2){
                             isOver = true;
-                            roundTime = frameTime*2;
                         }
                         if(isOver){
                             videoEncode.signalEndOfInputStream();
@@ -309,6 +308,7 @@ public class VideoEncode {
                     }
                     extractorInputBuffer(audioExtractor,audioDecoder);
                     int outIndex = audioDecoder.dequeueOutputBuffer(info, 10000);
+                    boolean isEnd = (info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
                     if(outIndex >= 0){
                         ByteBuffer data;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
@@ -319,11 +319,11 @@ public class VideoEncode {
                         if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
                             info.size = 0;
                         }
-                        if (info.size != 0) {
+                        if (info.size != 0 || isEnd) {
                             if(info.presentationTimeUs >= startTime){
                                 data.position(info.offset);
                                 data.limit(info.offset + info.size);
-                                encodeInputBuffer(data,audioEncode,info);
+                                encodeInputBuffer(data,audioEncode,info,isEnd);
                             }
                             audioDecoder.releaseOutputBuffer(outIndex, false);
                             if(info.presentationTimeUs >= endTime){
@@ -331,7 +331,7 @@ public class VideoEncode {
                             }
                         }
                     }
-                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                    if (isEnd) {
                         break;
                     }
                 }
@@ -347,7 +347,7 @@ public class VideoEncode {
             public void run() {
                 MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
                 while (true){
-                    int inputIndex = audioEncode.dequeueOutputBuffer(bufferInfo, 1000);
+                    int inputIndex = audioEncode.dequeueOutputBuffer(bufferInfo, 10000);
                     if(inputIndex >= 0){
                         ByteBuffer byteBuffer;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
@@ -380,6 +380,13 @@ public class VideoEncode {
                     }
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                         break;
+                    }
+                }
+                while (audioDecoder != null){
+                    try {
+                        Thread.sleep(5);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
                 audioEncode.stop();
@@ -525,7 +532,7 @@ public class VideoEncode {
 
 
 
-    private void encodeInputBuffer(ByteBuffer data,MediaCodec mediaCodec,MediaCodec.BufferInfo info){
+    private void encodeInputBuffer(ByteBuffer data,MediaCodec mediaCodec,MediaCodec.BufferInfo info,boolean isEnd){
         int inputIndex = mediaCodec.dequeueInputBuffer(50000);
         if (inputIndex >= 0) {
             ByteBuffer inputBuffer;
@@ -536,8 +543,8 @@ public class VideoEncode {
             }
             inputBuffer.clear();
             inputBuffer.put(data);
-            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                mediaCodec.queueInputBuffer(inputIndex, 0, data.limit(), info.presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+            if (isEnd) {
+                    mediaCodec.queueInputBuffer(inputIndex, 0, data.limit(), info.presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
             }else{
                 mediaCodec.queueInputBuffer(inputIndex, 0, data.limit(), info.presentationTimeUs, 0);
             }
