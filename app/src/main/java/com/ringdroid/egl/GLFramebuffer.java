@@ -4,6 +4,7 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.opengl.Matrix;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -143,6 +144,9 @@ public class GLFramebuffer {
 
         surfaceTexture.updateTexImage();
         surfaceTexture.getTransformMatrix(mSTMatrix);
+
+//        Matrix.rotateM(mSTMatrix,0,90,0,0,1);
+//        Matrix.translateM(mSTMatrix,0,0,-1,0);
 
         GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
 

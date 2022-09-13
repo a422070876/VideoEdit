@@ -269,7 +269,7 @@ public class VideoEncode {
                             isOver = true;
                             roundTime = frameTime*2;
                         }
-                        if(isOver && presentationTimeUs <= roundTime+5){
+                        if(isOver){
                             videoEncode.signalEndOfInputStream();
                             break;
                         }

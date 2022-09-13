@@ -387,29 +387,33 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
                 int videoWidth = player.getVideoFormat().width;
                 int videoHeight = player.getVideoFormat().height;
+                if(player.getVideoFormat().rotationDegrees == 90){
+                    videoWidth = player.getVideoFormat().height;
+                    videoHeight = player.getVideoFormat().width;
+                }
 
                 int screenWidth = mWidthPixels;
                 int screenHeight = mHeightPixels;
+                Rect rect = viewportSize(screenWidth,screenHeight,videoWidth,videoHeight);
+//                int left,top,viewWidth,viewHeight;
+//                float sh = screenWidth*1.0f/screenHeight;
+//                float vh = videoWidth *1.0f/ videoHeight;
+//                if(sh < vh){
+//                    left = 0;
+//                    viewWidth = screenWidth;
+//                    viewHeight = (int)(videoHeight *1.0f/ videoWidth *viewWidth);
+//                    top = (screenHeight - viewHeight)/2;
+//                }else{
+//                    top = 0;
+//                    viewHeight = screenHeight;
+//                    viewWidth = (int)(videoWidth *1.0f/ videoHeight *viewHeight);
+//                    left = (screenWidth - viewWidth)/2;
+//                }
 
-                int left,top,viewWidth,viewHeight;
-                float sh = screenWidth*1.0f/screenHeight;
-                float vh = videoWidth *1.0f/ videoHeight;
-                if(sh < vh){
-                    left = 0;
-                    viewWidth = screenWidth;
-                    viewHeight = (int)(videoHeight *1.0f/ videoWidth *viewWidth);
-                    top = (screenHeight - viewHeight)/2;
-                }else{
-                    top = 0;
-                    viewHeight = screenHeight;
-                    viewWidth = (int)(videoWidth *1.0f/ videoHeight *viewHeight);
-                    left = (screenWidth - viewWidth)/2;
-                }
-
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(viewWidth,viewHeight);
-                params.leftMargin = left;
-                params.topMargin = top;
-                params.bottomMargin = mHeightPixels - top - viewHeight;
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(rect.width(),rect.height());
+                params.leftMargin = rect.left;
+                params.topMargin = rect.top;
+                params.bottomMargin = mHeightPixels - rect.top - rect.height();
                 videoView.setLayoutParams(params);
 
                 RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
@@ -1082,14 +1086,40 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         return writer.toString();
     }
 
+    public Rect viewportSize(int screenWidth,int screenHeight,int videoWidth,int videoHeight) {
+        if (screenWidth <= 0 || screenHeight <= 0 || videoWidth <= 0 || videoHeight <= 0) {
+            return null;
+        }
+        int left, top, viewWidth, viewHeight;
+        float sh = screenWidth * 1.0f / screenHeight;
+        float vh = videoWidth * 1.0f / videoHeight;
+        if (sh < vh) {
+            left = 0;
+            viewWidth = screenWidth;
+            viewHeight = (int) (videoHeight * 1.0f / videoWidth * viewWidth);
+            top = (screenHeight - viewHeight) / 2;
+        } else {
+            top = 0;
+            viewHeight = screenHeight;
+            viewWidth = (int) (videoWidth * 1.0f / videoHeight * viewHeight);
+            left = (screenWidth - viewWidth) / 2;
+        }
+        Rect rect = new Rect();
+        rect.left = left;
+        rect.top = top;
+        rect.right = left + viewWidth;
+        rect.bottom = top + viewHeight;
+        return rect;
+    }
+
 
     public void onConfirm(View view){
         long vst = (long)(Double.parseDouble(formatTime(mStartPos))*1000*1000);
         long vse = (long)(Double.parseDouble(formatTime(mEndPos))*1000*1000);
-        if(vse - vst < 5 * 1000*1000){
-            Toast.makeText(this,"时长不能小于5秒",Toast.LENGTH_SHORT).show();
-            return;
-        }
+//        if(vse - vst < 5 * 1000*1000){
+//            Toast.makeText(this,"时长不能小于5秒",Toast.LENGTH_SHORT).show();
+//            return;
+//        }
         final VideoEncode videoEncode = new VideoEncode();
         videoEncode.setEncoderListener(new VideoEncode.OnEncoderListener() {
             @Override
@@ -1124,8 +1154,14 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         float bottomPro = bottom / cutHeight;
 
         //得到裁剪位置
-        int cropWidth = (int) (player.getVideoFormat().width * (rightPro - leftPro));
-        int cropHeight = (int) (player.getVideoFormat().height * (bottomPro - topPro));
+        int videoWidth = player.getVideoFormat().width;
+        int videoHeight = player.getVideoFormat().height;
+        if(player.getVideoFormat().rotationDegrees == 90){
+            videoWidth = player.getVideoFormat().height;
+            videoHeight = player.getVideoFormat().width;
+        }
+        int cropWidth = (int) (videoWidth* (rightPro - leftPro));
+        int cropHeight = (int) (videoHeight * (bottomPro - topPro));
         if(cropWidth%2 != 0){
             cropWidth = cropWidth - 1;
         }
