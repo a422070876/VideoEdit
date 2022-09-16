@@ -273,11 +273,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
                     videoExtractor.stop();
                 }else{
                     if(time >= 0){
-                        SparseArray<Bitmap> bitmaps = mWaveformView.getBitmaps();
-                        if(bitmaps != null && bitmaps.get(time) == null){
-                            bitmaps.put(time,bitmap);
-                        }
-                        mWaveformView.postInvalidate();
+                        mWaveformView.putBitmap(time,bitmap,rotationDegrees);
                     }
                 }
             }
@@ -372,7 +368,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
 
     }
 
-
+    private int rotationDegrees = 0;
 
     private Handler mPlayerHandler = new Handler(){
         @Override
@@ -390,6 +386,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
                 if(player.getVideoFormat().rotationDegrees == 90){
                     videoWidth = player.getVideoFormat().height;
                     videoHeight = player.getVideoFormat().width;
+                    rotationDegrees = 90;
                 }
 
                 int screenWidth = mWidthPixels;
@@ -582,6 +579,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
     private boolean isImageLoad = false;
     @Override
     public void waveformImage(final int loadSecs) {
+        if(mFlingVelocity != 0 || mTouchDragging)return;
         if(isPause){
           return;
         }
@@ -1156,7 +1154,7 @@ public class VideoEditActivity extends AppCompatActivity implements MarkerView.M
         //得到裁剪位置
         int videoWidth = player.getVideoFormat().width;
         int videoHeight = player.getVideoFormat().height;
-        if(player.getVideoFormat().rotationDegrees == 90){
+        if(rotationDegrees == 90){
             videoWidth = player.getVideoFormat().height;
             videoHeight = player.getVideoFormat().width;
         }
